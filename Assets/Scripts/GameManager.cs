@@ -1,36 +1,74 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.UI;
 
-public class GameManager : MonoBehaviour {
+public class GameManager : MonoBehaviour
+{
 
-    public static GameManager instance;
+    public static GameManager Instance;
 
-    private void Awake() {
-        if (instance == null) {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
+    public float timeToMatch = 10f;
+    public float currentTimeToMatch = 0;
+    public Board board;
+
+    public GameObject gameOver;
+    public bool canStart = false;
+
+    public enum GameState
+    {
+        Idle,
+        InGame,
+        GameOver
+    }
+
+    public GameState gameState;
+
+    private void Awake()
+    {
+        if(Instance == null)
+        {
+            Instance = this;
         }
-        else {
+        else
+        {
             Destroy(gameObject);
         }
     }
 
+    public int Points = 0;
+    public UnityEvent OnPointsUpdated;
+    // Start is called before the first frame update
 
-    public void DestroyWithDelay(GameObject gameObject) {
+    void Update()
+    {
+        if(gameState == GameState.InGame && canStart)
+        {
+            currentTimeToMatch += Time.deltaTime;
+            if(currentTimeToMatch > timeToMatch )
+            {
+                gameState = GameState.GameOver;
 
-        Debug.Log(gameObject.GetComponent<Piece>().pieceType + "Destroy");
-
-        Destroy(gameObject, 0.3f);
-        Invoke("CollapsePiecesAfterMatch3", 0.3f);
-    }
-
-    public void CollapsePiecesAfterMatch3() {
-        Board board = FindObjectOfType<Board>();
-        if(board != null) {
-            board.CollapsePieces();
+                MusicManager.Instance.PlayBackground(); //Entiendo que es la música que debe de sonar en GameOver.
+                gameOver.SetActive(true);
+            }
         }
     }
 
+    public void AddPoints (int newPoints)
+    {
+        Points += newPoints;
+        OnPointsUpdated?.Invoke();
+        currentTimeToMatch = 0;
+    }
 
+    public int GetPoints() {
+        return Points;
+    }
+
+    internal void ResetPoints() {
+        Points = 0;
+    }
 }
